@@ -1,0 +1,240 @@
+
+# Django-Admin All commands
+ django-admin
+
+# Create Django Project
+django-admin startproject projectname
+
+
+# Run the Django Server
+python manage.py runserver
+
+# Create the App
+python manage.py startapp appname
+
+# Stop Server from running
+Ctrl+C button in CMD
+
+# Run the Django Database API Shel
+python manage.py shell
+
+----------------------------------------------
+
+
+# OutPut simple Hello world page
+
+-> First import HttpResponse in views.py
+   from django.http import HttpResponse
+  
+-> Now Create your View
+   def index(response):
+   	return HttpResponse("Hello World")
+
+-> Create url.py file inside your App directly
+
+-> Import the url pathfr
+     from django.urls import path
+
+-> Import the views file
+     from . import views
+
+-> Now time to create the url patterns.
+     urlpatterns = [
+     path("", views.index, name="index"),
+
+ >>> Here the views.index refers to the index function that we Created in the in views.py file. the name="index" refers to the page url.
+
+>>> The first param " " is optional. If we wish to make subdirectly we can put name it here.
+
+-> import the django url path and include in the project's url.py file .
+
+  from django.urls import path, include
+
+-> Now finally it's time to link our Apps url.py file with our projects url.py file. We have to include the path inside urlpattern here.
+
+  path("", include("appname.urls")),
+
+
+-----------------------------------------------
+
+#Add Created App in Setting file
+
+-> add this in INSTALLED_APPS
+  'main.apps.MainConfig',
+
+>>Replace main with your App name. We need to do this step, if we want to work with Databases and other things so must ensure to do this.
+
+-> Now run the migration using CMD
+   python manage.py migrate
+ 
+-------------------------------------------------
+
+#Create Database using Models file
+
+>>> A model is just kind a blue print, How we want to save our data in database.
+
+>> The name of the class will be converted into the Database table name, The variable will be the Coloumn name of the table.
+
+>> Every model that we create will be inherit from models.Model .
+
+-> Here is an Example.
+   class album(models.Model):
+	artist = models.CharField(max_length=250)
+
+-> Now we have to make the app migration using command in Cmd
+ python manage.py makemigration myapp
+
+-> Run the final migration command
+ python manage.py migrate
+
+
+-------------------------------------------
+
+#make String representation of Model Class object
+
+->In models.py file inside the Model Class, after all the field type this method
+
+	def __str__(self):
+		return self.album_title
+
+>>> replace album _title with the field name which you wanna reprent your class object.
+
+>>> obiviousely you also have restart the server.
+
+
+---------------------------------------------
+
+#Setup the foreign key to connect to model classed
+
+-> Inside in the model class uner models.py file create a field 
+ myfield = models.ForeignKey(OtherClassName, on_delete=models.CASADE)
+
+>>> replace myfield with your field name and OtherClassName with the class which you want to connect.
+
+------------------------------------------------
+
+# Show database in the Admin Panel
+
+>>> By defoult only the users and Group shown in admin panel. If we wish to show any other Data base then we have to Follow process
+
+-> Inside App's admin.py import
+  from .models import nameOfModelClass
+
+->  Now register the Model Class
+   admin.site.register(nameOfModelClass)
+
+-> Re run the Server.
+
+------------------------------------------------
+
+#Important Django Shell commands
+
+-> Query all the rows from database 
+
+ ModelClassName.objecs.all()
+
+-> Add data to particular field
+ variableName = ModelClassName(name ="MyData")
+
+-> we also have to Save command to Permanent the Changes that we made.
+ variableName.save()
+
+-> Get any particlular object from using ID/Value
+ ModelClassName.objects.get(id=1)
+
+>>> Id's will be assign automatically in database and it will unique to each data rows.
+
+
+-------------------------------------
+
+#Create Super Admin User
+
+-> Stop the server if Running using Ctrl+c
+
+-> Create Super Admin user 
+   python manage.py createsuperuser
+
+-> Enter desired user name & email.
+
+-> Enter desired password.
+
+-> Run the server.
+
+-------------------------------------
+
+#Create Template & Static folder
+
+-> Inside the app directory make template folder and inside it create folder based on your App name.
+>>> All of our HTML files will be stored here.
+
+-> Now make static folder and inside it create folder based on your App name.
+>> All of our static files like CSS, Images, JS will be stored here.
+
+----------------------------------------
+
+# How to Do Template inheritence
+
+-> First Create the base.html template for base for your other Templates.
+
+-> To inherit the Base template we have to put this on Child template
+  {% extends 'dirName/base.html' %}
+
+>>> replace dirName with the directory name inside Template folder.
+
+-----------------------------------------------
+
+# Work with Content blocks
+
+-> In base template simply write
+	{% block myBlockName %}
+	{% endblock %}
+
+>>>Those content blocks kind a work like the exception there. Excluding those all part be inherited from the base file. 
+
+>>> We can set many Content block as we want on any place that we want.
+
+-> Use the Same block that created previousoly and put it in the Child template. Inside this block put the unique content.
+
+
+-------------------------------------------------
+
+#Render HTML page
+
+-> First import shortcuts
+ from Django.shortcuts import render
+
+-> Instead of Returning HttpResponse return this
+  return render(response, "dirName/about.html")
+
+-> So now full Code will be something like this
+	def about(response):
+		return render(response, "dirName/about.html")
+
+-> run the Server to check if its working
+
+--------------------------------------------------------
+
+# Create Simple Archive/Home Page in list format
+
+-> import the models class
+ from .models import modelClassName
+
+-> First you have to Link with DataBase object to View function.
+	def home(response, id):
+		posts = modelClassName.objects.all()
+		return render(response, "main/home.html, {"posts":posts})
+
+-> Create for loop on your Home/Archive template
+	<ul>
+		{% for post in posts.post.set.all %}
+			<li>posts.tittle</li>	
+		{% endfor%}
+	</ul>
+
+
+--------------------------------------------------------
+
+
+
+
+
