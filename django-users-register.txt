@@ -1,0 +1,243 @@
+#Django User Registration
+
+>>> First step here is to create another App inside our Project. We can done this without creating a new App, But it's better idea to seprate our user Management from Main App.
+
+-> First from Command prompt Create new App
+ python manage.py startapp users
+
+-> Add our newly created App in project's setting in INSTALLED_APPS 
+  'users.apps.UsersConfig'
+
+-> Import UserCreationForm in views.py file of user App
+ from django.contrib.auth.forms import UserCreationForm
+
+-> Now we need to Create our Register view in our Users view file
+ def register(request):
+	form = UserCreationForm()
+	return render(request, 'users/register.html', {'form':form})
+
+-> It's time to create template for our register page. Create templates folder in users app and in templates folder create users folder.
+
+
+
+-------------------------------------------------
+
+#Creating register HTML page.
+
+-> Make 'register.html' template in users folder in templates folder in users app.
+
+-> Create form and use method "POST"
+ <form method="POST">
+	{% csrf_token %}
+	{{ form }}
+	<button type="submit">Sign Up</button>
+ </form>
+
+>>> All things that are Specified here are Neccesary for Form to work and explained 
+  method="POST" => Securly post form data.
+  csrf token => Needed for security, Required.
+ {{ form }} => Connect UserCreationForm() instance that  we created  in views.py
+ submit button => submit button is also the neccesarry part.
+
+--------------------------------
+
+# Create url Pattern for form views 
+
+-> Inside the users app create urls.py file
+
+-> Create urlpatterns for the register view that we created.
+
+-> Add that url file in our Projects urls.py file.
+
+--------------------------------------------------------
+
+# Add conditionals to make form work.
+
+
+>>> The register page is created but it will not perform any action for now.
+>>> To make it work we have to add Conditionals for Get and Post requests.
+>>> Get request will show the form when page is displayed.
+>>> Post will post the information and create a new user.
+
+-> Now modify the register view method like this
+ def register(request):
+	if request.method == 'POST':
+		form = UserCreationForm(request.POST)
+	else:
+	 	form = UserCreationForm()
+	return render(request, 'users/register.html', {'form':form})
+
+>>> So it means that if users post the data the first condition will run and post the data else the second condition will run and will show only the form.
+
+>>> But we can't post anything that user fills out to your Server. Sometime user will post duplicate or invalid data. We can filter out the invalid data, again by using conditionals.
+
+>>> inside our first condition, Means if users posted data , We use conditionals to filter out the Invalid data.
+
+-> conditional statement that will filter valid data will be 
+	if form.is_valid():
+		username = form.cleaned_data.get('username')
+
+-> we also need to add .save method to save user in our app
+ form.save()
+
+-> So our Complete register view method view will look like this
+def register(request):
+ 	if request.method == 'POST':
+		form = UserCreationForm(request.POST)
+		if form.is_valid():
+		form.save()
+		username = form.cleaned_data.get('username')
+	else:
+	 	form = UserCreationForm()
+	return render(request, 'users/register.html', {'form':form})
+
+>>> It done. We can add few extra functionalities if we wish.
+
+----------------------------------------------------------------------
+
+# Show success message when user is created
+
+-> First import messages in our views.py file
+ from django.contrib import messages
+
+>>> Django have 4 diffrent types of messages type
+  DEBUG => Development-related messages 
+  INFO => Informational messages for the user
+  SUCCESS => Show success messages
+  WARNING => A failure did not occur but may be imminent
+  ERROR => An action was not successful.
+ 
+>>> So now we can show Success messages when the user is succefully created.
+
+-> To show Success message, The code will be like this
+ messages.success(request, f'account created for {username}')
+
+>>> the {username} refers to the username, the user that is Created successfully.
+
+-> The final Register method code will be like this
+def register(request):
+ 	if request.method == 'POST':
+		form = UserCreationForm(request.POST)
+		if form.is_valid():
+		form.save()
+		username = form.cleaned_data.get('username')
+		messages.success(request, f'account created for {username}')
+		
+	else:
+	 	form = UserCreationForm()
+	return render(request, 'users/register.html', {'form':form})
+
+-> Now we have to update our template to show the flash messages.
+	{% if messages %}
+		{% for message in messages %}
+			{{ message }}
+ 	{% endfor %}
+ 
+----------------------------------------------------------------
+
+# redirect user after succeful user creation
+
+-> First import redirect function to our views.py
+ from django.shortcuts import redirect
+
+-> This Function belongs to same directry as the render so most of the time we have to add just redirect in the end of import render like this
+ from django.shortcuts import render, redirect
+
+-> Now return redirct when the user is succefully created.
+ return redirect('blog-home')
+
+>>> blog-home is the name of Home page view in Url pattern, thus it redirect us to the home page.
+
+-> Once again the final Code will be : 
+ def register(request):
+ 	if request.method == 'POST':
+		form = UserCreationForm(request.POST)
+		if form.is_valid():
+		form.save()
+		username = form.cleaned_data.get('username')
+		messages.success(request, f'account created for {username}')
+		return redirect('blog-home')
+		
+	else:
+	 	form = UserCreationForm()
+	return render(request, 'users/register.html', {'form':form})
+
+>>> In case of returning to home, we should print messages on home page instead of the Register page itshelf.
+
+--------------------------------------------------------------------------
+
+# Add email field in our Register form
+
+>>> The basic UserCreationForm that django offers, miss lot's of field that we requered during registration like email.
+
+>>> The Good news is Django offers us the functionality to add those fields if we wish.
+
+>>> So to do this instead of putting {{form}} instance of UserCreationForm we have to create a new form that inherit from UserCreationForm.
+
+>>> Now to Create our custom form first we have to create our Custom form file.
+
+-> Create forms.py file in our users app.
+
+-> First we have to import forms from Django
+ from django import forms
+
+-> We are here modifing our user so we also need to import user model
+ from django.contrib.auth.models import User
+
+-> Import the UserCreationForm becouse you know we are Creating instance of it
+ from django.contrib.auth.forms import UserCreationForm
+
+>>> Now time to create our custom user register form. It can be done via Creating Class in our Forms.py file.
+
+-> Create User Register Form class 
+ class UserRegisterForm(UserCreationForm):
+	email = forms.EmailField()
+
+>>> By defoult each field are Required. we can set the opposite by required false.
+
+-> Now we need to create class meta inside that Class
+ class Meta:
+ 	model = User
+ 	fields = ['username','email','password1','password2']
+
+>>> Here Model refers to Database table which will be affected and fields refer to the fields which will be affected inside that table.
+
+-> The Final Class will be like this :-
+ class UserRegisterForm(UserCreationForm):
+	email = forms.EmailField()
+	
+	class Meta:
+ 		model = User
+ 		fields = ['username','email','password1','password2']
+
+
+ 
+-> Now Back to our views.py file we have to Import the form that we just created.
+ from .forms import UserRegisterForm
+
+>>> We want to use our UserRegisterForm instead of UserCreationForm so we have to Make few changes.
+
+>>> Previousoly we make the form instance of the UserCreationForm but now we had to make instance for the UserRegisterForm, So it's simple as to replace UserCreationForm with UserRegisterForm.
+
+-> So our Register function will be like this is Views.py
+ def register(request):
+ 	if request.method == 'POST':
+		form = UserRegisterForm(request.POST)
+		if form.is_valid():
+		form.save()
+		username = form.cleaned_data.get('username')
+	else:
+	 	form = UserRegisterForm()
+	return render(request, 'users/register.html', {'form':form})
+ 
+
+-> So now we are not using our UserCreationForm so we Can get rid of this line 
+  from django.contrib.auth.forms import UserCreationForm
+
+
+ -> Run the Server and Check that there is no Error.
+
+>>> We can style our Form by using Crispy Form Pakage.
+
+
+	 

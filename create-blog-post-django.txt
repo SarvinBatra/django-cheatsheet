@@ -1,0 +1,141 @@
+# Create Post models/Database
+
+-> First open models.py file in app
+
+-> Import following code
+ from django.utils import timezone
+ from django.contrib.auth.models import User
+
+-> Create a class in this file and add required field
+  class Post(models.Model):
+	title = models.CharField(max_length=100)
+    	content = models.TextField()
+    	date_posted = models.DateTimeField(default=timezone.now)
+   	author = models.ForeignKey(User, 			on_delete=models.CASCADE)
+
+-> Create dunder str method to represent the posts by its title
+	def __str__(self):
+		return self.title
+
+>>> as per this author statement, All of author's post will be deleted if the author's account got deleted.
+
+>>> If you not need user system then it's good idea to not create author field here.
+
+>>> We use ForeignKey to define relationship between two database tables.
+
+-> Run the MakeMigration Command
+ python manage.py makemigrations
+
+-> We can Check behind the Scene SQL Command if we wish by
+ python manage.py sqlmigrate appname yourMigrationNumber
+
+-> Run the Migrate Command
+ python manage.py migrate
+
+------------------------------------------------
+
+# Work with Database with Django Python shell
+
+-> Run the Django Python shell first.
+ python manage.py shell
+
+-> The interactive console will be open in CMD prompts
+
+-> import all required model classes which we want to work.
+  from blog.models import Post
+  from django.contrib.auth.models import User
+
+-> To get all object's 
+  User.objects.all()
+
+-> to get first object's
+  User.objects.first()
+
+-> To filter object on fields name
+ User.objects.filter(username='Rahul')
+
+-> To use filter command in Combination of first()
+ User.objects.filter(username='Rahul').first()
+
+-> We can also Capture a command in a Veriable like this
+ user = User.objects.filter(username='Rahul').first()
+
+-> Now we can check it's properties like this
+ user.id  - Show the User ID
+ user.pk - Shows the user primary key
+
+-------------------------------------------------------
+
+# Work on Post using Django Shell
+
+-> Show all post 
+ Post.objects.all()
+
+-> Make post using Shell
+ post_1 = Post(title="Blog 1", content="First blog post content", author=user)
+
+-> Commit the changes by Save function. It's required.
+ post_1.save()
+
+>>> Date will be automatically provided by current time if the date is not mentioned.
+
+-> Run the Command to confirm that the post is added
+  Post.objects.all()
+
+-> if it show the post then, Yes its added.
+
+-> We can create veriable here also, Like we create earliar.
+ post = Post.objects.first()
+
+-> Now we are Able to Check post's fields like
+ post.title => show the post title.
+ post.content => show the post content.
+ post.author => show the post author.
+ post.date_posted => show  the date on post in posted.
+
+-> Get the All post that a Particular user has created by -
+ user.post_set.all()
+
+-> We can also create the post using this set command -
+ user.post_set.create((title="Blog 3", content="Third blog post content")
+
+>>> This command will automatically save it to database, So there is no need to run save command aditionally it'll also added the post author.
+
+--------------------------------------------------------------------------
+
+#Fetch the post data from Database to our archive HTML template
+
+-> First import our Post model into the App's views.py file
+ from .models import Post
+
+-> We all have to add Context in our home function like this
+ def home(requests):
+	context = {'posts': Posts.objects.all()}
+	return render(request, 'blog/home.html', context)
+
+>>> The context in last line refer to the posts context.
+
+-> Add for loop in your Home/Archive page some thing like this
+  {% for post in posts %}
+      <p>{{ post.author }}</p>
+      <p>{{ post.date_posted|date:"d F, Y "}}</p>
+    <h2><a href="#">{{ post.title }</a></h2>
+    <p>{{ post.content }}</p>
+{% endfor %}
+
+>>> This Jinja templating will loop your Posts, As many posts you have on the home page.
+
+
+-------------------------------------------
+
+ # Register post with admin dashboard
+
+-> In App directory admin.py file import model
+ from .models import Post
+
+-> Register the post with admin in same page.
+ admin.site.register(Post)
+   
+
+
+

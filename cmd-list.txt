@@ -1,0 +1,35 @@
+ 
+
+#Create Vertual env in Conda
+ conda create --name envname
+
+#Create Vertual env with Specific Python version
+ conda create -n envname python=3.8
+
+# Create Venv with specific package
+ conda create -n envname django
+
+# To create venv with specific package version
+ conda create -n envname django=3.0.8
+
+# Create clone of existing Env
+ conda create --name myclonename --clone envname
+
+# Activate Conda Env
+ activate envname
+
+# Deactivate Conda Env
+ deactivate
+
+# Check all venv's
+ conda info --envs
+
+# remove an Conda env
+ conda env remove --name envname
+
+# Update python in Anaconda
+ conda update python
+
+# Create requirement File
+ conda list --export
+
