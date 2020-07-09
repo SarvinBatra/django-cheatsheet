@@ -1,0 +1,119 @@
+#Creating Login and Logout
+
+-> First open the project's urls.py file and import following
+ from django.contrib.auth import views as  auth_views
+ 
+-> Add this Path in project's url Pattern for  login.
+ path('login/', auth_views.LoginView.as_view(),  name='login')
+
+-> Add this path for Logout
+ path('logout/', auth_views.LogoutView.as_view(), name='logout')
+
+>>> The login and Logout is built in Class based views in Django. It means that we not need to Write those from scratch we just need to import those and add in our urls.py file.
+
+>>> However, We create the template for those views and Add in them.
+
+-> We can add template in Login page by 
+ path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
+ 
+-> for logout page  
+ path('logout/', auth_views.LogoutView.as_view(template_name='users/logout.html'), name='logout'),
+
+>>> Here we defined the template inside as_view method by template_name veriable ie template_name='users/logout.html'
+
+>>> The next step will be creating those templates that we mentioned.
+
+-------------------------------------------
+
+#Creating Login and Logout template
+
+-> first navigate to template directry of the App and create the HTML templates by given names.
+
+-> Create form, the login page should contain atleast this to function
+
+<form method="POST">
+	{% csrf_token %}
+	{{ form }}
+	<button type="submit">Sign In</button>
+ </form>
+
+-> Create the Logout page somethig like this
+ <h2>You have been logged out!</h2>
+ <a href="{% url 'login' %">Login again</a>
+
+>>> Here Login refers to the login page and we are Askin g the users if he wish to log back in.
+
+>>> We are completely free to design our logout page as we want as long as we not leave it to defoult.
+
+______________________________
+
+#Redirect users after login
+
+>>> by defoult django redirect users to http://127.0.0.1:8000/accounts/profile when a user logged in.
+
+>>> We can change this Functionality and link up to the Page of our where we want to refer Logged in user.
+
+-> First head over to the Project's setting page.
+
+-> Scroll down to the very Bottom of it and write down
+ LOGIN_REDIRECT_URL = 'home'
+
+>>> Here Home is the Page where we want to refer the Logged in user after Login.
+
+-----------------------------------------------
+
+# Using Conditionals
+
+>>>if user.is_authenticated simply refers to that if users is login
+
+>>> We can use if else statement with user.is_authenticated to show or hide the content based on the fact user is Login or Not.
+
+>>> For example we wanna Show login and register menu option to not logged in users only and Logout option to those who are Currently logged in then we can do something like this.
+
+{% if user.is_authenticated %}
+		<a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
+		<a class="nav-item nav-link" href="{% url 'profile' %}">Profile</a>
+        {% else %}
+                <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
+                <a class="nav-item nav-link" href="{% url 'register' %}">Register</a>
+{% endif %}
+
+----------------------------------------------------
+
+# Put restrictions on Certain routes
+
+>>> We can restrict site visitors to visitig certain pages. Pages or routes that meant only for site users can be easily restricted by using 'Login required' decorator
+
+-> To use it first we have to Import it
+ from django.contrib.auth.decorators import login_required
+
+-> Now put Decorator on the route which we want to restrict
+ @login_required
+
+----------------------------------------------------
+
+# Create profile page
+
+-> Open views.py fie of users app.
+
+-> Create profile view
+ def profile(request):
+    return render(request, 'users/profile.html')
+
+-> create profile.html template.
+   <h1>{{ user.username }}</h1>
+
+>>> user.username will show the username of the user that is currently logged in.
+
+-> Now create the url path in url pattern inside urls.py file for our profile view.
+ path('profile/', views.profile, name='profile'),
+
+-> We can restrict this page so it can be accesed by Logged in user only by '@login_required' decorated. So finally our method will be like this
+ @login_required
+ def profile(request):
+    return render(request, 'users/profile.html')
+
+-> by defoult django will sent users to defoult profile page which didn't exist in our case. To Change this go to project setting.
+
+-> Scroll down all the way to botton and write
+ LOGIN_URL = 'login'
