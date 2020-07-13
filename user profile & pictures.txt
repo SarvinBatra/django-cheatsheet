@@ -1,0 +1,154 @@
+#Create user profile Page
+
+#Add user profile picture
+
+>>> By defoult Django does not have the functionality to add profile picture. To do so we have to create a user profile field and make it one to one relationship with our user model.
+
+-> In your users App models file import
+ from django.contrib.auth.models import User
+
+-> Create a new Model Class there -
+ class Profile(models.Model):
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	image = models.ImageField(default='default.jpg', upload_to='profile_pics')
+	
+	def __str__(self):
+		return f'{self.user.username} Profile'
+
+>>> on_delete=models.CASCADE means if the user get deleted, its profile picture will be deleted too.
+
+>>> Here in this class as a field we can also add verious things like Bio, Address, Social media links that we wanna add. But for this tutorial we are only going to add profile picture.
+
+>>> The image field represent the profile image field. The user field here we use to connect with the User's database. Their relationship here is one to one so we use models.OneToOneField type.
+
+
+>>> Now to make changes in Database we need to run the migration command. But here in this case the migration will not work, Becouse here we are working with images. To work with images we need to install Pillow.
+
+-> Install the Pillow package by 
+ pip install Pillow
+
+-> Run the Makemigration command
+ python manage.py makemigration
+
+-> Finally the migrate command
+ python manage.py migrate
+
+>>> Now we have to register this model class so we can see it admin panel
+
+-> in users app admin.py first import this
+ from .models import Profile
+
+-> Now add this line
+ admin.site.register(Profile)
+
+>>> Profile here is the class model that we created to show user profile on profile page.
+
+-> go to site/admin and now we can add the profile image to any particular user.
+
+-> You will also notice that in the root directry the profile_pics folder is also created.
+
+---------------------------------
+
+#Working with shell
+
+-> Run the shell by
+ python manage.py shell
+
+-> create the user instance
+ user = User.objects.filter(username='admin').first()
+
+-> Now we can access the all fields of our user.
+ user => representataion of user
+ user.profile => String representation of user profile
+ user.profile.image => profile location
+ user.profile.image.width => image width
+ user.profile.image.height => image height
+ user.profile.image.url => location of image profile
+ 
+-------------------------------------------
+
+#Change the Location of images
+
+-> Open the project's settings.py file
+
+-> Scroll down till the end and add following line
+ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+ MEDIA_URL = '/media'
+
+>>> media root is where our uploaded images will be.As per the command the media folder will be on the root folder of our project. So it means our images will be on root/media/profile_pics/images.png
+
+>>> if we already added the images prior to adding following this process the images will be where it was.
+
+>>> Now we can delete the old profile_pics folder which was situated in our projects root directory.
+
+----------------------------------
+
+#Show profile image on profile page
+
+>>> We want to show the profile image, username, user email address to the profile page.
+
+-> first off we have to modify the profile.html template to show our user image, username and email in proper way. Here is basic code for it
+    <img src="{{ user.profile.image.url }}">
+      <h2>{{ user.Username }}</h2>
+      <p>{{ user.email }}</p>
+
+>>> this is basic code without any css. We can css in this to make it more prentable.
+
+-> Now we have to add url pattern for those images
+
+-> Go to project's urls.py file and import
+ from django.conf import settings
+ from django.conf.urls.static import static
+
+-> now add this in urls.py file
+ if settings.DEBUG:
+	urlpatterns += static(settings.MEDIA_URL,Document_root=settings.MEDIA_ROOT)
+
+-> Go to site, Login in the account Navigate to profile section and check if everthing working as expected.
+
+----------------------------------------
+
+#Set defoult image for user.
+
+-> Drop image named 'default.jpg' into the media folder.
+
+-> Back to profile page and Check if it working for user which profile pic is not Set.
+
+>>> Currently we didn't set up anything to automatically assign default image to the user who just sign up. To do so we have to add Django signals.
+
+-> Inside our users app create file named 'signals.py'
+
+-> import the signal post_save
+ from django.db.models.signals import post_save
+
+-> import built in User model as well
+ from django.contrib.auth.models import User
+
+-> import the reciever too
+ from django.dispatch import receiver
+
+-> import Profile class from our model.py file
+ from .models import Profile
+
+>>> Now that we have all those things here, We can tie them together and Create a Signal that we want to create.
+
+-> Write a function to create profile when user is created
+ @receiver(post_save, sender=User)
+ def create_profile(sender, instance, created, **kwargs):
+	if created:
+		Profile.objects.create(user=instance)
+
+-> Write another function which works when user is saved 
+ @receiver(post_save, sender=User)
+ def save_profile(sender, instance, **kwargs):
+	instance.profile.save()
+
+
+-> Go inside the users apps.py file.
+
+-> inside the UsersConfig Class create function
+ def ready(self):
+	import users.signals
+
+-> Pull up the Browser and Create a new user and login with that account to see if image set automatically.
+ 

@@ -1,0 +1,136 @@
+#Update user profiles
+
+-> Within users app open forms.py file
+
+-> Create model form
+ class UserUpdateForm(form.ModelForm):
+	email = forms.EmailField()
+
+-> Create Class meta inside that class
+ class Meta:
+	model: User
+	fields = ['username','email']
+
+-> import profile model
+ from .models import Profile
+
+-> Now we can create profile update form
+ class ProfileUpdateForm(forms.ModelForm):
+	class Meta:
+		model = profile
+		fields = ['image']
+
+>>> Here we created two update form for our profile page.From that page we can update those two forms. The fields that are mentioned in the class meta are updateble fields.
+
+-> Now in users app open views.py file and import
+ from .forms import UserUpdateForm, ProfileUpdateForm
+
+-> Now down in the profile view which is already created previousaly we create instances
+ u_form = UserUpdateForm()
+ p_form = ProfileUpdateForm()
+
+-> now add it in context
+ context = {
+	'u_form': UserUpdateForm()
+	'p_form': ProfileUpdateForm()
+ }
+
+-> Pass this context in our return statement
+
+-> So our final profile view will look like this
+ @login_required
+ def profile(request):
+	u_form = UserUpdateForm()
+	p_form = ProfileUpdateForm()
+ 	
+	context = {
+		'u_form': UserUpdateForm()
+		'p_form': ProfileUpdateForm()
+	}
+	
+	return render(request, 'users/profile.html, context)
+
+-> In profile.html template add this form
+ <form method="POST" enctype="multipart/form-data">
+ 	{% csrf_token %}
+	{u_form}
+	{p_form}
+	<button type="submit">Update</button>
+ </form>
+
+>>> Django will automatically add all the fields that we added using previous steps. If we mention both forms under one from tag and submit button it will be treated as single form.
+
+-------------------------------------------
+
+# Make current information field in
+
+-> in users app views.py file profile view add
+ instance=request.user => in u_form parenthis
+ instance=request.user.profile => in p_form parenthis
+
+>>> We use conditional to check if user posting or viewing page. The Code below is self exopantary.
+
+-> So now the profile view will look like this
+ @login_required
+ def profile(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST,request.FILES,instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, f'Your account has been updated!')
+            return redirect('profile')
+
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+    return render(request, 'users/profile.html', context)
+
+>>> We check if the both of the form is valid or not. Only when both of the form is valid we will save the data, Show the sucess message to the user and return the updated profile page.
+
+-----------------------------------
+
+#Auto resize photo when upload
+
+-> Go to users App and Open models.py file
+
+-> import image from pillow
+ from PIL import Image
+
+-> We modify Profile model class. Simple add this code inside Profile class
+ def save(self):
+	super().save()
+ 	
+	img = Image.open(self.image.path)
+	
+	
+	if img.height > 300 or img.width > 300:
+		output_size = (300, 300)
+		img.thumbnail(output_size)
+		img.save(self.image.path)
+
+>>> this function will resize the image once we upload it.
+
+
+---------------------------------------
+
+#Display author image beside each post
+
+-> in blog app open home.html template.
+
+-> put it on approtiate place 
+ <img src="{{ post.author.profile.image.url }}">
+
+-> Save everything and open up Homepage to check
+
+
+ 
+
+
+ 

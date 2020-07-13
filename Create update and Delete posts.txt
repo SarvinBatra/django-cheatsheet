@@ -1,0 +1,235 @@
+# Create Home page List view
+
+>>> Till now we are using the function based views in our views. However django also offers as the Class based views which offers far more built in functionality for us.
+
+>>> Unlike function based views the class based views handles most of the backend logic for us. So we can done most of work with minimum code.
+
+>>> There are Many kind of class based views used to perform diffrent kind of task.
+
+-> In blog app open views.py file import
+ from django.views.generic import ListView
+
+-> Create a news Class to make it work
+ class PostListView(ListView):
+	model = Post
+
+>>> in this code we inherit the PostListView Class from the ListView. by using model = Post we define that which model we want to use in this listview.
+
+-> Go to urls.py of same App directory import
+ from .views import PostListView
+
+-> In urlPattern add/replace this line
+ path('', PostListView.as_view(), name='blog-home'),
+
+>>> The ListView will by defoult look for url with the naming convention of <app>/<model>_<viewtype>.html . If it didn't find this template it will return the error.
+
+>>> We can create the very same template or we can change the template to our desired one.
+
+-> Go back to our app's views.py file and in PostListView class define desired template by 
+ template_name = 'blog/home.html'
+
+-> set it in the same class
+ context_object_name = 'posts'
+
+-> Change the order of post by 
+ ordering = ['-date_posted']
+
+>>> It will show post in Newest to order
+
+-->> The Final code will be 
+ class PostListView(ListView):
+	model = Post
+	template_name = 'blog/home.html'
+	context_object_name = 'posts'
+	ordering = ['-date_posted']
+
+-> Run the server and Check the home page to see if everthing is working.
+
+
+------------------------------------
+
+#Create DetailView for Post page
+
+-> First import DetailView from the same directory of ListView
+ from django.views.generic import ListView, DetailView
+
+-> Create Class for DetailView
+ class PostDetailView(DetailView):
+	model = Post
+	template_name = 'blog/post.html'
+	context_object_name = 'post'
+
+-> Go to urls.py of App's directory and import PostDetailView There along 
+ from .views import PostListView, PostDetailView
+
+-> Create path for DeatailView path in urlpattern.
+ path('post/<int:pk>/', PostDetailView.as_view(), name='post-detail')
+
+-> Within templates directry create new post.html template
+
+>>> Here in this template we will show the information for the single post. So we did not need to use for loop. Here we just have to fetch the detailes that we need from the Model. Here is example
+ <h2> {{ post.title }} </h2>
+ <p> {{ post.content }} </p>
+
+>>> With the help of CSS and HTML we can customize the page as we want and from using oject we can fetch certain fields from database.
+
+-> Go to any Specifiec page like /post/1/ to go to post and check if the DetailView is working or not.
+
+----------------------------------------------------
+
+#Link home page with individual articles
+
+>>> If you click on the article titles on the homepage you will notice that those links for now not going anywhere. That's not how blogs supposed to work, We have link those with their post page.
+
+-> Inside the Home page post title link add
+ <a href="url 'post-detail' post.id ">{{ post.title }}</a>
+
+-> Run the Server, Go back to homePage and click on the article title to check if it is redirecting or not.
+
+---------------------------------------
+
+# CreateView for Create post
+
+-> Right after DetailView and ListView Import CreateView
+
+-> Create a Class which inherit this CreateView
+ class PostCreateView(CreateView):
+	model = Post
+	template_name = 'blog/post_create.html'
+	fields = ['title', 'content']
+
+>>> In the model we specify the model which we want to use and in fields we will mention the field which will shown on post Create view.
+
+-> Now it's time to Create its Path in urlpattern
+
+-> Import PostCreateView from .views
+
+-> Create this path in UrlPattern
+ path('post/new/', PostCreateView.as_view(), name='post-create'),
+
+-> Now we have to Create a template for this view. Create a template name post_create.html in templates/blog directory.
+
+-> Minimum things that needed to added to this form work is 
+ <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit">Post</button>
+ </form>
+
+>>> Now we have to use a method to set an author automatically as logged in user while try to create post.
+
+->  Create form_valid method inside PostCreateView in Views.py
+ def form_valid(self, form):
+	form.instance.author = self.request.user
+	return super().form_valid(form)
+
+>>> Now once the post is created we can redirect the user to this newly created post.
+
+-> In app's diretory open up model.py file. Import this funtion
+ from django.urls import reverse
+
+-> Inside the Post model create this function
+ def get_absolute_url(self):
+	return reverse('post-detail', kwargs={'pk':self.pk}) 
+
+-> Go to website/post/new/ and try to create new post.
+
+---------------------------------------------
+
+#Redirect non-logged in user if try to access page
+
+-> import this in your Views.py file
+ from django.contrib.auth.mixins import LoginRequiredMixin
+
+-> add this LoginRequiredMixin in far left side inside PostCreateView Parenthis
+
+->> So our PostCreateView Will look like this
+ class PostCreateView(LoginRequiredMixin, CreateView):
+	model = Post
+ 	fields = ['title', 'content']
+	
+------------------------------------------------
+
+# Create UpdateView to update posts
+
+-> First import UpdateView in views.py file.
+
+-> Create the UpdateView Class
+ class PostUpdateView(LoginRequiredMixin, UpdateView):
+	model = Post
+ 	fields = ['title', 'content']
+	
+	def form_valid(self, form):
+		form.instance.author = self.request.user
+		return super().form_valid(form)
+ 
+-> Add path for our UpdateView in Urls.py.
+
+-> import PostUpdateView from .views in urls.py
+
+-> add this path in urlpattern
+ path('post/<int:pk>/update/', PostUpdateView.as_views(), name='post-update'),
+
+---------------------------------------------------
+
+#Give access to only blog author to update post
+
+-> Go to Views.py file on the top import another mixin
+ UserPassesTestMixin
+
+-> add this in our PostUpdateView class parenthis just right to LoginRequiredMixin
+
+-> create a function to make it work inside PostUpdateView class
+ def test_func(self):
+	post = self.get.object()
+	if self.request.user == post.author:
+		return True
+	return False
+
+-----------------------------------------------------
+
+# DeleteView to delete the post
+
+-> First import the DeleteView
+
+-> Create class PostDeleteView by inheriting this view
+ class PostDeleteView(LoginRequiredMixin,UserPassesTestMixin, DeleteView):
+	model = Post
+	context_object_name = 'post'
+	
+	def test_func(self):
+		post = self.get.object()
+		if self.request.user == post.author:
+			return True
+		return False
+
+-> Go urls.py import PostDeleteView from .views
+
+-> Create path for it inside urlpattern
+ path('post/<int:pk>/delete/', PostDeleteView.as_view(), name='post-delete')
+
+-> within templates/blog create new template post_confirm_delete.html .
+
+-> add this in this template
+  <form method="post">
+    {% csrf_token %}
+    <p>Do you really want to delete post</p>
+    <button type="submit">Yes!</button>
+    <a href="{% url 'post-detail' post.id %}">Cancel</a>
+ </form>
+
+-> add success url in PostDeleteView Class
+ success_url = '/'
+
+
+>>> Pro tip - Add option in navigation to Create a new post and set conditional to show only logged i users.
+
+--------------------------------------------------------
+
+#Add delete and Update button in Post
+
+-> Add this on approtiate place in post html page
+ {% if post.author == user %}
+	<a href="{% url 'post-update' post.id %}">Update</a>
+	<a href="{% url 'post-delete' post.id %}">Delete</a>
+ {}
