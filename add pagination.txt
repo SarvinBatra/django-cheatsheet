@@ -1,0 +1,109 @@
+
+#import post from Json file
+
+-> run the django Shell
+ python manage.py shell
+
+-> Make sure to put posts.json as same direcory as Manage.py
+
+-> import Json module
+ import json
+
+-> import Post model
+ from blog.models import Post
+
+-> Load json file by this
+ with open('posts.json') as f:
+	posts_json = json.load(f)
+
+-> Use for loop to loop thru posts
+ for post in posts_json:
+	post = Post(title=post['title], content=post['content'], author_id=post['user_id'])
+	post.save()
+
+-> if we did not get any error it means all those post added to our database succefully.
+
+--------------------------------
+
+#Paginate ListView
+
+-> We can decide how many post we wanna show on page by adding this in ListView Class, In our case PostListView
+ paginate_by = 5
+
+>>> This will show five post per page.
+
+-> Open home template. and decide the place where you want to add the pagination
+
+-> The best place is right after for loop which loops the posts on Home page.
+
+-> Put this pagination logic
+ {% if is_paginated %}
+
+      {% if page_obj.has_previous %}
+        <a class="btn btn-outline-info mb-4" href="?page=1">First</a>
+        <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <a class="btn btn-info mb-4" href="?page={{ num }}">{{ num }}</a>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a class="btn btn-outline-info mb-4" href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.next_page_number }}">Next</a>
+        <a class="btn btn-outline-info mb-4" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+      {% endif %}
+
+    {% endif %}
+
+>>> In this code we are using Bootstrap 4 Classes to create button we can replace it our CSS to make button as desired.
+
+
+----------------------------
+
+#Show post from particular user when click on it
+
+-> import get_object_or_404, right beside render
+
+-> import user by
+ from django.contrib.auth.models import User
+
+-> Create a new PostListView
+ class UserPostListView(ListView):
+	model = Post
+	template_name = 'blog/user_posts.html'
+	context_object_name = 'posts'
+	paginate_by = 5
+
+ 	def get_queryset(self):
+		user = get_object_or_404(User, username=self.kwargs.get('username'))
+		return Post.objects.filter(author=user).order_by('-date_posted')
+
+-> Open urls.py and import UserPostListView
+
+-> Add this path in urlpattern
+ path('user/<str:username>',UserPostListView.as_view(), name='user-posts')
+
+-> within our Templates folder create user_posts.html
+
+-> add this in your html template
+ <h1>Posts By {{ view.kwargs.username }} ({{ page_obj.paginator.count }})</h2>
+ {% for post in posts %}
+    <p>{{ post.author }}</p>
+    <p>{{ post.date_posted|date:"d F, Y "}}</p>
+    <h2><a href="#">{{ post.title }</a></h2>
+    <p>{{ post.content }}</p>
+ {% endfor %}
+
+-> add Pagination logic right after it.
+	
+-> put this to get user post everytime.
+ <a href="{% url 'user-posts' post.author.username %}">{{ post.author }}</a>
+ 
+
+		
+
+
